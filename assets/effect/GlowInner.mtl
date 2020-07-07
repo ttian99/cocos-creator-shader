@@ -1,0 +1,34 @@
+{
+  "__type__": "cc.Material",
+  "_name": "GlowInner",
+  "_objFlags": 0,
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "7b9b2b5e-99f2-44f1-958c-5a4a6500a58f"
+  },
+  "_techniqueIndex": 0,
+  "_techniqueData": {
+    "0": {
+      "props": {
+        "alphaThreshold": 0.5,
+        "glowColor": {
+          "__type__": "cc.Color",
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "a": 255
+        },
+        "glowColorSize": 0.1,
+        "glowThreshold": 0.15,
+        "texture": {
+          "__uuid__": "6aa0aa6a-ebee-4155-a088-a687a6aadec4"
+        }
+      },
+      "defines": {
+        "USE_TEXTURE": true,
+        "USE_ALPHA_TEST": false,
+        "USE_GLOW_INNER": true
+      }
+    }
+  }
+}

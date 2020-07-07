@@ -1,0 +1,137 @@
+// Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.  
+
+/**
+  马赛克效果
+  原理：将纹理分成 m x n 个方块，方块内取同一个颜色
+*/
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: vs
+      frag: fs
+      blendState:
+        targets:
+        - blend: true
+      rasterizerState:
+        cullMode: none
+      properties:
+        texture: { value: white }
+        alphaThreshold: { value: 0.5 }
+        #x轴方块数量
+        xBlockCount: {
+          value: 30.0,
+          editor: {
+            tooltip: "x轴方块数量",
+          },
+        }
+        # y轴方块数量
+        yBlockCount: {
+          value: 30.0,
+          editor: {
+            tooltip: "y轴方块数量",
+          },
+        }
+}%
+
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <cc-global>
+  #include <cc-local>
+
+  in vec3 a_position;
+  in vec4 a_color;
+  out vec4 v_color;
+
+  #if USE_TEXTURE
+  in vec2 a_uv0;
+  out vec2 v_uv0;
+  #endif
+
+  void main () {
+    vec4 pos = vec4(a_position, 1);
+
+    #if CC_USE_MODEL
+    pos = cc_matViewProj * cc_matWorld * pos;
+    #else
+    pos = cc_matViewProj * pos;
+    #endif
+
+    #if USE_TEXTURE
+    v_uv0 = a_uv0;
+    #endif
+
+    v_color = a_color;
+
+    gl_Position = pos;
+  }
+}%
+
+
+CCProgram fs %{
+  precision highp float;
+  
+  #include <alpha-test>
+
+  in vec4 v_color;
+
+  #if USE_TEXTURE
+  in vec2 v_uv0;
+  uniform sampler2D texture;
+  #endif
+
+  #if USE_MOSAIC
+  uniform Mosaic {
+    float xBlockCount; //x轴方块数量
+    float yBlockCount; //y轴方块数量
+  };
+
+  vec2 getUvMapPos() {
+    //x轴方块的宽度
+    float xBlockWidth;
+    if (xBlockCount <= 0.0)  {
+      xBlockWidth = 1.0;
+    } else {
+      xBlockWidth = 1.0 / xBlockCount;
+    }
+    //计算点在x轴哪个格子内
+    float xBlockIndex = floor(v_uv0.x / xBlockWidth); 
+    //y轴方块的宽度
+    float yBlockWidth;
+    if (yBlockCount <= 0.0) {
+      yBlockWidth = 1.0;
+    } else {
+      yBlockWidth = 1.0 / yBlockCount;
+    }
+    //计算点在y轴哪个格子内
+    float yBlockIndex = floor(v_uv0.y / yBlockWidth);
+
+    // 计算格子颜色(取格子中心点的颜色)
+    //计算中心点坐标
+    vec2 pos = vec2((xBlockIndex + 0.5) * xBlockWidth, (yBlockIndex + 0.5) * yBlockWidth);  
+    return pos;
+  }
+  #endif
+
+  void main () {
+    vec4 o = vec4(1, 1, 1, 1);
+    
+    vec2 realPos = v_uv0;
+    #if USE_MOSAIC
+      realPos = getUvMapPos();
+    #endif
+    #if USE_TEXTURE
+    o *= texture(texture, realPos);
+      #if CC_USE_ALPHA_ATLAS_TEXTURE
+      o.a *= texture2D(texture, realPos + vec2(0, 0.5)).r;
+      #endif
+    #endif
+
+    o *= v_color;
+
+    ALPHA_TEST(o);
+
+    gl_FragColor = o;
+  }
+}%
