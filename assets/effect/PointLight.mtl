@@ -1,0 +1,35 @@
+{
+  "__type__": "cc.Material",
+  "_name": "PointLight",
+  "_objFlags": 0,
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "ad2d5e1d-9dc3-4c66-b7d2-d2904774f1bb"
+  },
+  "_techniqueIndex": 0,
+  "_techniqueData": {
+    "0": {
+      "defines": {
+        "USE_TEXTURE": true,
+        "USE_POINT_LIGHT": true
+      },
+      "props": {
+        "pointColor": {
+          "__type__": "cc.Vec4",
+          "x": 1,
+          "y": 0,
+          "z": 0,
+          "w": 1
+        },
+        "pointSize": 0.5,
+        "pointCenter": {
+          "__type__": "cc.Vec2",
+          "x": 0.2,
+          "y": 0.2
+        },
+        "enableFog": 1,
+        "cutAlpha": 1
+      }
+    }
+  }
+}

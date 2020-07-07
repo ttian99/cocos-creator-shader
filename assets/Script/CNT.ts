@@ -16,6 +16,10 @@ const EFFECT_LIST = [
         desc: '内发光(GlowInner)',
         prefab: 'GlowInner',
     },
+    {
+        desc: '点光/扫光(PointLight)',
+        prefab: 'PointLight',
+    },
 ]
 
 const CNT = { EFFECT_LIST };

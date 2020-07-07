@@ -2,13 +2,6 @@ import CNT from "./CNT";
 
 const {ccclass, property} = cc._decorator;
 
-const EFFECT_LIST = [
-    'OldPhoto',
-    'Gray',
-    'Mosaic',
-    'GlowInner'
-]
-
 @ccclass
 export default class ListScene extends cc.Component {
     @property(cc.Node) content: cc.Node = null;

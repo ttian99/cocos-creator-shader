@@ -1,0 +1,180 @@
+// Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.  
+
+/**
+ * 光点的效果
+ * 1.原理：
+ * - 画圆
+ * - 中心点透明度为1.0，边缘透明度为0.0
+ * - 在圆图形上叠加
+ * 
+ * 2.确定参数
+ * - 圆心:(x, y)
+ * - 半径:radius
+ * - 光的颜色: cc.Color
+ * 
+ * 3.
+ */
+
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: vs
+      frag: fs
+      blendState:
+        targets:
+        - blend: true
+      rasterizerState:
+        cullMode: none
+      properties:
+        texture: { value: white }
+        alphaThreshold: { value: 0.5 }
+        
+        #光点的位置(圆心)
+        pointCenter: {
+          value: [0.5, 0.5],
+          editor: {
+            tooltip: '光点的位置'
+          }
+        }
+        #光点的大小(半径)
+        pointSize: {
+          value: 0.5,
+          editor: {
+            tooltip: '光点的大小' 
+          }
+        }
+        #光点的颜色
+        pointColor: {
+          value: [1.0, 0.0, 0.0, 1.0],
+          editor: {
+            tooltip: '光点的颜色'
+          }
+        }
+        #是否裁剪透明区域的光线
+        cutAlpha: {
+          value: 1.0,
+          editor: {
+            tooltip: '是否裁剪透明区域的光线'
+          }
+        }
+        #是否启用迷雾效果
+        enableFog: {
+          value: 1.0,
+          eidtor: {
+            tooltip: '是否启用迷雾效果'
+          }
+        }
+}%
+
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <cc-global>
+  #include <cc-local>
+
+  in vec3 a_position;
+  in vec4 a_color;
+  out vec4 v_color;
+
+  #if USE_TEXTURE
+  in vec2 a_uv0;
+  out vec2 v_uv0;
+  #endif
+
+  void main () {
+    vec4 pos = vec4(a_position, 1);
+
+    #if CC_USE_MODEL
+    pos = cc_matViewProj * cc_matWorld * pos;
+    #else
+    pos = cc_matViewProj * pos;
+    #endif
+
+    #if USE_TEXTURE
+    v_uv0 = a_uv0;
+    #endif
+
+    v_color = a_color;
+
+    gl_Position = pos;
+  }
+}%
+
+
+CCProgram fs %{
+  precision highp float;
+  
+  #include <alpha-test>
+
+  in vec4 v_color;
+
+  #if USE_TEXTURE
+  in vec2 v_uv0;
+  uniform sampler2D texture;
+  #endif
+
+  // 特效开始
+  #if USE_POINT_LIGHT
+  // 定义参数
+  uniform PointLight {
+    vec4 pointColor;
+    vec2 pointCenter;
+    float pointSize;
+    float cutAlpha;
+    float enableFog;
+  };
+  #endif
+
+  void main () {
+    vec4 o = vec4(1, 1, 1, 1);
+
+    #if USE_TEXTURE
+    o *= texture(texture, v_uv0);
+      #if CC_USE_ALPHA_ATLAS_TEXTURE
+      o.a *= texture2D(texture, v_uv0 + vec2(0, 0.5)).r;
+      #endif
+    #endif
+
+    o *= v_color;
+
+    ALPHA_TEST(o);
+
+    gl_FragColor = o;
+
+    // 特效处理部分
+    // 要在图案上方，叠加一个点光，将两者颜色混合起来，那么最终选择的混合模式如下：
+    //
+    // （点光）color_src: GL_SRC_ALPHA
+    // （原图像）color_dest: GL_ONE
+    // 
+    // 即最终颜色如下：
+    // color_src * GL_SRC_ALPHA + color_dest * GL_ONE
+    #if USE_POINT_LIGHT
+      // 获取当前点和光点的距离
+      float dist = distance(pointCenter, v_uv0);
+      // 初始透明度
+      float alpha = 1.0;
+      // 圆心高亮：从中心往周边渐变
+      alpha = (1.0 - (dist / pointSize)) * alpha;
+
+      // 大于半径不处理:step为步进函数,dist>pointSize为0.0, dist<pointSize为1.0
+      float isOut = step(pointSize, dist);
+      if (bool(isOut)) {
+        alpha = 0.0;
+      }
+      // 是否裁剪透明区域
+      if (bool(cutAlpha) && gl_FragColor.a < 0.01) {
+        alpha = 0.0;
+      }
+      // 如果启用迷雾效果
+      if (bool(enableFog) && bool(isOut)) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0 - alpha);
+      }
+      // 光的颜色
+      vec4 lightColor = pointColor * alpha;
+      // 混合
+      gl_FragColor = gl_FragColor + lightColor;
+    #endif
+  }
+}%

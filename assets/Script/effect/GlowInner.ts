@@ -17,8 +17,8 @@ export default class GlowInner extends cc.Component {
     @property(cc.Label) colorB: cc.Label = null;
     @property(cc.Label) colorA: cc.Label = null;
 
-    maxTreshold = 1.0; // 阈值最大值
-    maxColorSize = 0.2; // 最大值
+    maxTreshold = 1.00; // 发光阈值最大值
+    maxColorSize = 0.100; // 发光宽度最大值
 
     start() {
         this._updateGlow();
@@ -26,7 +26,7 @@ export default class GlowInner extends cc.Component {
 
     _updateGlow() {
         const glowColorSize = Math.floor(this.glowColorSizeSlider.progress * this.maxColorSize * 1000) / 1000;
-        const glowThreshold = Math.floor(this.glowThresholdSlider.progress * this.maxTreshold * 1000) / 1000;
+        const glowThreshold = Math.floor(this.glowThresholdSlider.progress * this.maxTreshold * 100) / 100;
         const R = Math.floor(this.colorRSlider.progress * 255);
         const G = Math.floor(this.colorGSlider.progress * 255);
         const B = Math.floor(this.colorBSlider.progress * 255);
