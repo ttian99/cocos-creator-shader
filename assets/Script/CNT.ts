@@ -20,6 +20,10 @@ const EFFECT_LIST = [
         desc: '点光/扫光(PointLight)',
         prefab: 'PointLight',
     },
+    {
+        desc: '圆角效果(RoundedRectangle)',
+        prefab: 'RoundedRectangle',
+    },
 ]
 
 const CNT = { EFFECT_LIST };

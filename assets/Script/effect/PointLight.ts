@@ -1,4 +1,4 @@
-const { ccclass, property } = cc._decorator;
+const { ccclass, property, executeInEditMode } = cc._decorator;
 
 /**
  * 光点的效果
@@ -19,6 +19,7 @@ const { ccclass, property } = cc._decorator;
  *
  */
 @ccclass
+@executeInEditMode
 export default class PointLight extends cc.Component {
     @property(cc.Sprite) sprite: cc.Sprite = null;
     @property(cc.Label) pointCenterLabel: cc.Label = null;
@@ -28,27 +29,27 @@ export default class PointLight extends cc.Component {
 
     maxSize = 1.0; //最大半径
 
-    pointCenter: cc.Vec2 = cc.v2(0.5, 0.5); //圆心
-    pointSize = 0.3 //半径
+    pointCenter = cc.v2(0.5, 0.5); //圆心
+    pointSize = 5; //半径
     pointColor = cc.color(255, 0, 0, 255); //颜色
     cutAlpha = 0.0; //裁剪透明区域的
     enableFog = 0.0; //是否启用迷雾
 
     start() {
-        this._updateMaterial();
+        // this._updateMaterial();
     }
 
     onEnable() {
-        this.sprite.node.on(cc.Node.EventType.TOUCH_START, this.onTouchStart, this);
-        this.sprite.node.on(cc.Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
-        this.sprite.node.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this);
-        this.sprite.node.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+        this.sprite.node.on(cc.Node.EventType.TOUCH_START, this.onTouchStart, this.sprite.node);
+        this.sprite.node.on(cc.Node.EventType.TOUCH_MOVE, this.onTouchMove, this.sprite.node);
+        this.sprite.node.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this.sprite.node);
+        this.sprite.node.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this.sprite.node);
     }
     onDisable() {
-        this.sprite.node.off(cc.Node.EventType.TOUCH_START, this.onTouchStart, this);
-        this.sprite.node.off(cc.Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
-        this.sprite.node.off(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this);
-        this.sprite.node.off(cc.Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+        this.sprite.node.off(cc.Node.EventType.TOUCH_START, this.onTouchStart, this.sprite.node);
+        this.sprite.node.off(cc.Node.EventType.TOUCH_MOVE, this.onTouchMove, this.sprite.node);
+        this.sprite.node.off(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this.sprite.node);
+        this.sprite.node.off(cc.Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this.sprite.node);
     }
     onTouchStart(event) {
         console.log(event);
@@ -60,8 +61,8 @@ export default class PointLight extends cc.Component {
     onTouchEnd(event) {
         this.setPointCenter(event);
     }
-    onTouchCancel() {
-
+    onTouchCancel(event) {
+        this.setPointCenter(event);
     }
     setPointCenter(event?: cc.Event.EventTouch) {
         if (!event) {
@@ -69,14 +70,17 @@ export default class PointLight extends cc.Component {
             this._updateMaterial();
             return;
         } else {
-            // var pos = event.touch.getLocationInView();
             const target: cc.Node = event.target;
-            let pos = event.touch.getLocation();
+            let pos = event.getLocation();
+            // console.log('pos', pos.toString());
+            // target.
+            // pos = target.parent.convertToWorldSpaceAR(pos);
+            pos = target.convertToNodeSpaceAR(pos);
             console.log('pos', pos.toString());
-            pos = target.parent.convertToNodeSpaceAR(pos);
             pos = cc.v2(pos.x / target.width, pos.y / target.height);
-            pos = cc.v2(pos.x + 0.5, 0.5 - pos.y);
             console.log('pos', pos.toString());
+            pos = cc.v2((pos.x + 0.5), (1 - (target.anchorY + pos.y)));
+            // console.log('pos', pos.toString());
             this.pointCenter = pos;
             this._updateMaterial();
         }
@@ -93,7 +97,7 @@ export default class PointLight extends cc.Component {
         const sprite = this.sprite;
         let material: cc.Material = sprite.getMaterial(0);
         material.setProperty("pointCenter", this.pointCenter);
-        material.setProperty("pointSize", this.pointSize);
+        material.setProperty("pointSize", this.pointSize / 100);
         material.setProperty("pointColor", this.pointColor);
         material.setProperty("cutAlpha", this.cutAlpha);
         material.setProperty("enableFog", this.enableFog);

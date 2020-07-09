@@ -1,0 +1,21 @@
+{
+  "__type__": "cc.Material",
+  "_name": "rounded-rectangle",
+  "_objFlags": 0,
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "27756002-4c46-414b-9eaa-6ba30224c717"
+  },
+  "_techniqueIndex": 0,
+  "_techniqueData": {
+    "0": {
+      "defines": {
+        "USE_TEXTURE": true,
+        "USE_ROUNDED_RECTANGLE": true
+      },
+      "props": {
+        "radius": 0.2
+      }
+    }
+  }
+}

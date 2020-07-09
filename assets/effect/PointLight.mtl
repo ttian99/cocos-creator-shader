@@ -24,10 +24,10 @@
         "pointSize": 0.5,
         "pointCenter": {
           "__type__": "cc.Vec2",
-          "x": 0.2,
-          "y": 0.2
+          "x": 0.5,
+          "y": 0.5
         },
-        "enableFog": 1,
+        "enableFog": 0,
         "cutAlpha": 1
       }
     }

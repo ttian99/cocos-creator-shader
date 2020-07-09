@@ -30,28 +30,28 @@ CCEffect %{
         alphaThreshold: { value: 0.5 }
         
         #光点的位置(圆心)
-        pointCenter: {
+        centerPoint: {
           value: [0.5, 0.5],
           editor: {
             tooltip: '光点的位置'
           }
         }
-        #光点的大小(半径)
-        pointSize: {
-          value: 0.5,
-          editor: {
-            tooltip: '光点的大小' 
-          }
-        }
         #光点的颜色
-        pointColor: {
+        centerColor: {
           value: [1.0, 0.0, 0.0, 1.0],
           editor: {
             tooltip: '光点的颜色'
           }
         }
+        #光点的大小(半径)
+        radius: {
+          value: 0.5,
+          editor: {
+            tooltip: '光点的大小' 
+          }
+        }
         #是否裁剪透明区域的光线
-        cutAlpha: {
+        cropAlpha: {
           value: 1.0,
           editor: {
             tooltip: '是否裁剪透明区域的光线'
@@ -118,10 +118,10 @@ CCProgram fs %{
   #if USE_POINT_LIGHT
   // 定义参数
   uniform PointLight {
-    vec4 pointColor;
-    vec2 pointCenter;
-    float pointSize;
-    float cutAlpha;
+    vec4 centerColor;
+    vec2 centerPoint;
+    float radius;
+    float cropAlpha;
     float enableFog;
   };
   #endif
@@ -152,19 +152,19 @@ CCProgram fs %{
     // color_src * GL_SRC_ALPHA + color_dest * GL_ONE
     #if USE_POINT_LIGHT
       // 获取当前点和光点的距离
-      float dist = distance(pointCenter, v_uv0);
+      float dist = distance(centerPoint, v_uv0);
       // 初始透明度
       float alpha = 1.0;
       // 圆心高亮：从中心往周边渐变
-      alpha = (1.0 - (dist / pointSize)) * alpha;
+      alpha = (1.0 - (dist / radius)) * alpha;
 
-      // 大于半径不处理:step为步进函数,dist>pointSize为0.0, dist<pointSize为1.0
-      float isOut = step(pointSize, dist);
+      // 大于半径不处理:step为步进函数,dist>radius为0.0, dist<radius为1.0
+      float isOut = step(radius, dist);
       if (bool(isOut)) {
         alpha = 0.0;
       }
       // 是否裁剪透明区域
-      if (bool(cutAlpha) && gl_FragColor.a < 0.01) {
+      if (bool(cropAlpha) && gl_FragColor.a < 0.01) {
         alpha = 0.0;
       }
       // 如果启用迷雾效果
@@ -172,7 +172,7 @@ CCProgram fs %{
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0 - alpha);
       }
       // 光的颜色
-      vec4 lightColor = pointColor * alpha;
+      vec4 lightColor = centerColor * alpha;
       // 混合
       gl_FragColor = gl_FragColor + lightColor;
     #endif

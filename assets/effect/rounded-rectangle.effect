@@ -1,0 +1,129 @@
+// Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.  
+
+/***
+  原理：
+    1.确定4个圆心(r, r), (1.0-r, r), (r, 1.0-r), (1.0-r,1.0-r)
+    在下列区域内（4个角度区域）,判断距离圆心的距离
+    x > 1.0 - radius || x < r
+    y > 1.0 - radius || y < r
+    2.距离大于半径需要将alpha值变为0
+*/
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: vs
+      frag: fs
+      blendState:
+        targets:
+        - blend: true
+      rasterizerState:
+        cullMode: none
+      properties:
+        texture: { value: white }
+        alphaThreshold: { value: 0.5 }
+        # 圆角半径
+        radius: {
+          value: 0.05,
+          range: [0.0, 1.0],
+          editor: {
+            tooltip: '圆角半径[0.0, 1.0]'
+          }
+        }
+}%
+
+
+CCProgram vs %{
+  precision highp float;
+
+  #include <cc-global>
+  #include <cc-local>
+
+  in vec3 a_position;
+  in vec4 a_color;
+  out vec4 v_color;
+
+  #if USE_TEXTURE
+  in vec2 a_uv0;
+  out vec2 v_uv0;
+  #endif
+
+  void main () {
+    vec4 pos = vec4(a_position, 1);
+
+    #if CC_USE_MODEL
+    pos = cc_matViewProj * cc_matWorld * pos;
+    #else
+    pos = cc_matViewProj * pos;
+    #endif
+
+    #if USE_TEXTURE
+    v_uv0 = a_uv0;
+    #endif
+
+    v_color = a_color;
+
+    gl_Position = pos;
+  }
+}%
+
+
+CCProgram fs %{
+  precision highp float;
+  
+  #include <alpha-test>
+
+  in vec4 v_color;
+
+  #if USE_TEXTURE
+  in vec2 v_uv0;
+  uniform sampler2D texture;
+  #endif
+
+  // 增加参数
+  #if USE_ROUNDED_RECTANGLE
+  uniform RoundedRectangle {
+    float radius;
+  };
+  #endif
+
+  void main () {
+    vec4 o = vec4(1, 1, 1, 1);
+
+    #if USE_TEXTURE
+    o *= texture(texture, v_uv0);
+      #if CC_USE_ALPHA_ATLAS_TEXTURE
+      o.a *= texture2D(texture, v_uv0 + vec2(0, 0.5)).r;
+      #endif
+    #endif
+
+    o *= v_color;
+
+    ALPHA_TEST(o);
+
+    gl_FragColor = o;
+
+    #if USE_ROUNDED_RECTANGLE
+      float alpha = o.a;
+      float x = v_uv0.x;
+      float y = v_uv0.y;
+      float dist = 0.0; // 圆心距离
+      float r = radius;
+      if (x < r) { // 左边
+        if (y < r) { // 上边
+          dist = distance(v_uv0, vec2(r, r));
+        } else if (y > 1.0 - r) { //下边
+          dist = distance(v_uv0, vec2(r, 1.0 - r));
+        }
+      } else if (x > 1.0 - r) { // 右边
+        if (y < r) { // 上边
+          dist = distance(v_uv0, vec2(1.0-r, r));
+        } else if (y > 1.0 - r) { //下边
+          dist = distance(v_uv0, vec2(1.0-r, 1.0 - r));
+        }
+      }
+      alpha = step(dist, r) * alpha;
+      o.a = alpha;
+      gl_FragColor = o;
+    #endif
+  }
+}%
